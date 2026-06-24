@@ -3,8 +3,8 @@
 
 function App(){
   return(
-    <div>
-      <h1>Youtube Clone - Project Setup Done ✅</h1>
+    <div className="bg-yt-bg min-h-screen flex items-center justify-center">
+      <h1 className="text-3xl font-bold text-yt-red">Youtube Clone - Project Setup Done ✅</h1>
       <p></p>
     </div>
   )
