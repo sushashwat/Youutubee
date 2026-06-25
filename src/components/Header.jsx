@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Menu, Search, Mic, Bell, Video, User } from 'lucide-react'
 
 /**
@@ -74,11 +75,12 @@ function Header({ onToggleSidebar }) {
             - In the Auth step, this will become a <Link to="/login"> (React Router)
               and will conditionally render the logged-in user's name + avatar
               instead, once a user is authenticated (Redux auth state). */}
-        <button className="flex items-center gap-2 border border-yt-border rounded-full
+        <Link
+        to="/login" className="flex items-center gap-2 border border-yt-border rounded-full
                             px-3 py-1.5 text-blue-600 hover:bg-blue-50">
           <User size={18} />
           <span className="text-sm font-medium">Sign in</span>
-        </button>
+        </Link>
       </div>
     </header>
   )
