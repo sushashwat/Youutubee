@@ -1,36 +1,28 @@
-import { useState } from 'react';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
-import FilterButtons from './components/FilterButtons';
-import VideoGrid from './components/VideoGrid';
+import { Routes, Route } from 'react-router-dom'
+import Layout from './components/Layout'
+import Home from './pages/Home'
+import VideoPlayer from './pages/VideoPlayer'
+import ChannelPage from './pages/ChannelPage'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
 
+/**
+ * App Component
+ * --------------
+ * Defines all routes. Routes nested under Layout share the Header + Sidebar shell. /login and /signup are standalone (no shell).
+ */
 function App() {
-  // Sidebar open/closed state - lifted here so both Header's hamburger
-  // button and Sidebar's render mode can share the same state.
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-
-  // Which category is selected - drives the (upcoming) Video Grid filtering.
-  // "All" shows everything; any other value shows only matching videos.
-  const [activeCategory, setActiveCategory] = useState('All')
-
-
   return (
-    <div className="bg-yt-bg min-h-screen">
-      <Header onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)} />
-      <Sidebar isOpen={isSidebarOpen} />
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/video/:videoId" element={<VideoPlayer />} />
+        <Route path="/channel/:channelId" element={<ChannelPage />} />
+      </Route>
 
-      {/* Main content shifts right based on current sidebar width */}
-      <main
-        className={`pt-14 p-4 transition-all duration-200
-                    ${isSidebarOpen ? 'ml-60' : 'ml-[72px]'}`}
-      >
-         <FilterButtons
-          activeCategory={activeCategory}
-          onSelectCategory={setActiveCategory}
-        />
-        <VideoGrid activeCategory={activeCategory} />
-      </main>
-    </div>
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+    </Routes>
   )
 }
 
