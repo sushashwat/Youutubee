@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import Header from './components/Header'
-import Sidebar from './components/Sidebar'
-import FilterButtons from './components/FilterButtons'
+import { useState } from 'react';
+import Header from './components/Header';
+import Sidebar from './components/Sidebar';
+import FilterButtons from './components/FilterButtons';
+import VideoGrid from './components/VideoGrid';
 
 function App() {
   // Sidebar open/closed state - lifted here so both Header's hamburger
@@ -27,7 +28,7 @@ function App() {
           activeCategory={activeCategory}
           onSelectCategory={setActiveCategory}
         />
-        <p>Video Grid aur Filters next steps mein aayenge.</p>
+        <VideoGrid activeCategory={activeCategory} />
       </main>
     </div>
   )
