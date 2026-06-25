@@ -1,3 +1,4 @@
+import {Link} from 'react-router-dom'
 import { channels } from '../data/channels'
 import { formatViews, formatTimeAgo } from '../utils/formatters'
 
@@ -8,13 +9,15 @@ import { formatViews, formatTimeAgo } from '../utils/formatters'
  * 
  * Props:
  *  - video (object): one video object from src/data/videos.js
+ * 
+ * Wrapped in a <link> so clicking the card navigates to that video's player page (route:/video/:videoId)
  */
 function VideoCard({ video }) {
   // Look up the channel this video belongs to, to display its name.
   const channel = channels.find((c) => c.channelId === video.channelId)
 
   return (
-    <div className="cursor-pointer group">
+     <Link to={`/video/${video.videoId}`} className="cursor-pointer group block">
       {/* Thumbnail */}
       <div className="relative rounded-xl overflow-hidden aspect-video bg-yt-hover-bg">
         <img
@@ -36,7 +39,7 @@ function VideoCard({ video }) {
           {formatViews(video.views)} • {formatTimeAgo(video.uploadDate)}
         </p>
       </div>
-    </div>
+    </Link>
   )
 }
 
