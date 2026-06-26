@@ -1,17 +1,23 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
 import { validateEmail, validatePassword } from '../utils/validators'
+import { login } from '../redux/slices/authSlice'
+import { users } from '../data/users'
 
 /**
  * Login Page
  * -----------
  * Route: "/login" - standalone page (no Header/Sidebar).
  *
- * Real authentication (checking credentials, storing JWT, Redux auth
- * state) is wired up in upcoming steps. For now, client-side validation only.
+ * Real authentication (server checking credentials, JWT) comes in the
+ * backend step. For now: validate the form, then look up a matching
+ * mock user by email to get a display name (falls back to the email's
+ * local part if no match), and dispatch it into Redux auth state.
  */
 function Login() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
 
@@ -32,8 +38,11 @@ function Login() {
     if (hasErrors) return
 
     // TODO (Backend step): replace with real POST /api/auth/login call,
-    // store returned JWT, update Redux auth state.
-    console.log('Logging in:', formData)
+    // store returned JWT (e.g. in localStorage) instead of this lookup.
+    const matchedUser = users.find((u) => u.email === formData.email)
+    const username = matchedUser?.username ?? formData.email.split('@')[0]
+
+    dispatch(login({ username, email: formData.email }))
     navigate('/')
   }
 
