@@ -1,5 +1,5 @@
 import {Link} from 'react-router-dom'
-import { channels } from '../data/channels'
+import { useSelector } from 'react-redux'
 import { formatViews, formatTimeAgo } from '../utils/formatters'
 
 /**
@@ -13,7 +13,7 @@ import { formatViews, formatTimeAgo } from '../utils/formatters'
  * Wrapped in a <link> so clicking the card navigates to that video's player page (route:/video/:videoId)
  */
 function VideoCard({ video }) {
-  // Look up the channel this video belongs to, to display its name.
+  const channels = useSelector((state) => state.channels.items)
   const channel = channels.find((c) => c.channelId === video.channelId)
 
   return (
