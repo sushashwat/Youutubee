@@ -1,14 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "./slices/authSlice";
+import authReducer from './slices/authSlice'
+import videosReducer from './slices/videosSlice'
+import channelsReducer from './slices/channelsSlice'
 
-/**
- * Redux store
- * ------------
- * Currently holds only auth state. Other slices (e.g. search) can be
- * added here later if a page needs to share that state globally.
- */
-export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-  },
+export const store  = configureStore({
+    reducer:{
+        auth:authReducer,
+        videos:videosReducer,
+        channels:channelsReducer,
+    },
 })
