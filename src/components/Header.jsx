@@ -18,6 +18,11 @@ import { logout } from '../redux/slices/authSlice'
 function Header({ onToggleSidebar }) {
   const dispatch = useDispatch()
   const { user, isAuthenticated } = useSelector((state) => state.auth)
+  const channels = useSelector((state) => state.channels.items)
+
+  // Check whether the logged-in user already owns a channel.
+  // (Will be used later to decide where the Create button navigates.)
+  const ownChannel = isAuthenticated ? channels.find((c) => c.owner === user.userId) : null
 
   return (
     <header
@@ -42,9 +47,7 @@ function Header({ onToggleSidebar }) {
         </div>
       </div>
 
-      {/* ----------- CENTER SECTION: Search bar -----------
-          Still static UI - wired to actual filtering once search state
-          moves into Redux. */}
+      {/* Center: Search bar (UI only for now) */}
       <div className="hidden sm:flex items-center flex-1 max-w-xl mx-8">
         <input
           type="text"
@@ -62,9 +65,15 @@ function Header({ onToggleSidebar }) {
 
       {/* ----------- RIGHT SECTION: Actions + Auth ----------- */}
       <div className="flex items-center gap-3">
-        <button className="hidden sm:block p-2 rounded-full hover:bg-yt-hover-bg" aria-label="Create">
-          <Video size={22} />
-        </button>
+        {isAuthenticated && (
+          <Link
+            to={ownChannel ? `/channel/${ownChannel.channelId}` : '/create-channel'}
+            className="hidden sm:block p-2 rounded-full hover:bg-yt-hover-bg"
+            aria-label={ownChannel ? 'Your channel' : 'Create channel'}
+          >
+            <Video size={22} />
+          </Link>
+        )}
         <button className="hidden sm:block p-2 rounded-full hover:bg-yt-hover-bg" aria-label="Notifications">
           <Bell size={22} />
         </button>
