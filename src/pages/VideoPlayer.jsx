@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import { ThumbsUp, ThumbsDown } from 'lucide-react'
-import { videos } from '../data/videos'
-import { channels } from '../data/channels'
 import { formatViews, formatTimeAgo } from '../utils/formatters'
 import CommentSection from '../components/CommentSection'
 
@@ -18,7 +17,9 @@ import CommentSection from '../components/CommentSection'
  */
 function VideoPlayer() {
   const { videoId } = useParams()
-  const video = videos.find((v) => v.videoId === videoId)
+  const videos = useSelector((state)=> state.videos.items)
+  const channels = useSelector((state)=> state.channels.items)
+  const video = videos.find((v)=> v.videoId === videoId)
 
   // Tracks what *this* user clicked: 'like' | 'dislike' | null.
   // Needed so clicking Like again "undoes" it, and switching from
@@ -26,6 +27,15 @@ function VideoPlayer() {
   const [likes, setLikes] = useState(video?.likes ?? 0)
   const [dislikes, setDislikes] = useState(video?.dislikes ?? 0)
   const [userReaction, setUserReaction] = useState(null)
+
+  // Reset reaction state whenever the user navigates to a *different*
+  // video (otherwise the previous video's like count would carry over).
+
+  useEffect(()=>{
+    setLikes(video?.likes ?? 0)
+    setDislikes(video?.dislikes ?? 0)
+    setUserReaction(null)
+  }, [videoId])
 
   if (!video) {
     return <p className="text-yt-text-secondary">Video not found.</p>
