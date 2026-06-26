@@ -4,23 +4,23 @@ import VideoCard from './VideoCard'
 /**
  * VideoGrid Component
  * --------------------
- * Responsive grid of VideoCard component.
- * Reads video from redux now instead of importing mock data directly so channel page-edits/deletes reflects 
- * here immediately.
+ * Filters videos by BOTH the selected category AND the search term
+ * (case-insensitive match against the title), then renders the grid.
  */
 function VideoGrid({ activeCategory }) {
   const videos = useSelector((state) => state.videos.items)
-  // Edge case: selected category has no videos (can happen once users
-  // start uploading their own videos via the Channel page later).
-    const filteredVideos =
-    activeCategory === 'All'
-      ? videos
-      : videos.filter((video) => video.category === activeCategory)
+  const searchTerm = useSelector((state) => state.search.term)
+
+  const filteredVideos = videos.filter((video) => {
+    const matchesCategory = activeCategory === 'All' || video.category === activeCategory
+    const matchesSearch = video.title.toLowerCase().includes(searchTerm.trim().toLowerCase())
+    return matchesCategory && matchesSearch
+  })
 
   if (filteredVideos.length === 0) {
     return (
       <p className="text-yt-text-secondary text-sm py-8 text-center">
-        No videos found in this category.
+        No videos found.
       </p>
     )
   }
