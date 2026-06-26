@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import Home from './pages/Home'
 import VideoPlayer from './pages/VideoPlayer'
 import ChannelPage from './pages/ChannelPage'
+import CreateChannel from './pages/CreateChannel'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/video/:videoId" element={<VideoPlayer />} />
         <Route path="/channel/:channelId" element={<ChannelPage />} />
+        <Route path ="/create-channel" element={<CreateChannel/>} />
       </Route>
 
       <Route path="/login" element={<Login />} />
