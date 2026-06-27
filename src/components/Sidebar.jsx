@@ -56,10 +56,11 @@ function Sidebar({ isOpen }) {
 
   return (
     <aside
-      className={`fixed top-14 left-0 h-[calc(100vh-56px)] bg-yt-white
-                  border-r border-yt-border overflow-y-auto py-2 px-2
-                  transition-all duration-200
-                  ${isOpen ? 'w-60' : 'w-[72px]'}`}
+      className={`fixed top-14 left-0 h-[calc(100vh-56px)] w-60 bg-yt-white
+              border-r border-yt-border overflow-y-auto py-2 px-2 z-40
+              transition-all duration-200
+              ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+              sm:translate-x-0 ${!isOpen && 'sm:w-18'}`}
     >
       {/* Primary navigation - always visible, expanded or collapsed */}
       <div className="flex flex-col gap-1">
