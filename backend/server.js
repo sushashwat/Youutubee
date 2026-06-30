@@ -4,6 +4,7 @@ import cors from 'cors';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
+import channelRoutes from './routes/channelRoutes.js'
 
 // Load environment variables from .env before a    nything else runs
 dotenv.config()
@@ -27,6 +28,7 @@ app.get('/', (req,res)=> {
 
 app.use('/api/auth', authRoutes)
 app.use('/api/videos', videoRoutes)
+app.use('/api/channels', channelRoutes)
 
 const PORT = process.env.PORT || 5000
 
