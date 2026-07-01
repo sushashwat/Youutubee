@@ -1,54 +1,80 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { users } from '../data/users'
+import api from '../api/axios'
 import CommentItem from './CommentItem'
 
-function CommentSection({ initialComments }) {
+/**
+ * CommentSection Component
+ * --------------------------
+ * Full CRUD for comments on a video, using the real backend.
+ * Props:
+ *  - videoId: MongoDB _id of the video
+ *  - initialComments: populated comment array from the video fetch
+ */
+
+
+function CommentSection({videoId, initialComments }) {
   const { user, isAuthenticated } = useSelector((state) => state.auth)
   const [comments, setComments] = useState(initialComments)
   const [newCommentText, setNewCommentText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  function handleAddComment() {
+    async function handleAddComment() {
     const trimmed = newCommentText.trim()
     if (!trimmed || !isAuthenticated) return
 
-    const newComment = {
-      commentId: `comment-${Date.now()}`,
-      userId: user.userId,
-      text: trimmed,
-      timestamp: new Date().toISOString(),
+    try {
+      setSubmitting(true)
+      const { data } = await api.post('/comments', { text: trimmed, videoId })
+      setComments((prev) => [data, ...prev])
+      setNewCommentText('')
+    } catch (err) {
+      console.error('Add comment failed:', err)
+    } finally {
+      setSubmitting(false)
     }
-
-    setComments((prev) => [newComment, ...prev])
-    setNewCommentText('')
   }
 
-  function handleEditComment(commentId, newText) {
-    setComments((prev) => prev.map((c) => (c.commentId === commentId ? { ...c, text: newText } : c)))
+  async function handleEditComment(commentId, newText) {
+    try {
+      const { data } = await api.put(`/comments/${commentId}`, { text: newText })
+      setComments((prev) =>
+        prev.map((c) => (c._id === commentId ? { ...c, text: data.text } : c))
+      )
+    } catch (err) {
+      console.error('Edit comment failed:', err)
+    }
   }
 
-  function handleDeleteComment(commentId) {
-    setComments((prev) => prev.filter((c) => c.commentId !== commentId))
+async function handleDeleteComment(commentId) {
+    try {
+      await api.delete(`/comments/${commentId}`)
+      setComments((prev) => prev.filter((c) => c._id !== commentId))
+    } catch (err) {
+      console.error('Delete comment failed:', err)
+    }
   }
 
-  return (
+    return (
     <div className="mt-6">
       <h2 className="font-medium mb-4">{comments.length} Comments</h2>
 
       {isAuthenticated ? (
         <div className="flex gap-3 mb-6">
           <input
-            type="text" value={newCommentText} onChange={(e) => setNewCommentText(e.target.value)}
+            type="text"
+            value={newCommentText}
+            onChange={(e) => setNewCommentText(e.target.value)}
             placeholder="Add a comment..."
             className="flex-1 border-b border-yt-border outline-none focus:border-yt-black pb-1 text-sm"
           />
           <button
             onClick={handleAddComment}
+            disabled={!newCommentText.trim() || submitting}
             className="text-sm font-medium px-4 py-1.5 bg-yt-black text-yt-white rounded-full disabled:opacity-40"
-            disabled={!newCommentText.trim()}
           >
-            Comment
+            {submitting ? 'Posting...' : 'Comment'}
           </button>
         </div>
       ) : (
@@ -58,22 +84,16 @@ function CommentSection({ initialComments }) {
       )}
 
       <div className="flex flex-col gap-4">
-        {comments.map((comment) => {
-          const commentUser = users.find((u) => u.userId === comment.userId)
-          const displayName =
-            commentUser?.username ?? (comment.userId === user?.userId ? user.username : 'Unknown')
-
-          return (
-            <CommentItem
-              key={comment.commentId}
-              comment={comment}
-              username={displayName}
-              canModify={isAuthenticated && comment.userId === user.userId}
-              onEdit={handleEditComment}
-              onDelete={handleDeleteComment}
-            />
-          )
-        })}
+        {comments.map((comment) => (
+          <CommentItem
+            key={comment._id}
+            comment={comment}
+            username={comment.user?.username ?? 'Unknown'}
+            canModify={isAuthenticated && comment.user?._id === user?._id}
+            onEdit={handleEditComment}
+            onDelete={handleDeleteComment}
+          />
+        ))}
       </div>
     </div>
   )
