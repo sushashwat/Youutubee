@@ -1,21 +1,22 @@
 import { useState } from "react";
-import {Link,useNavigate} from "react-router-dom";
-import { validateUsername, validateEmail, validatePassword } from '../utils/validators'
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { validateUsername, validateEmail, validatePassword } from '../utils/validators';
+import { registerUser } from '../redux/slices/authSlice';
 
 /**
  * Signup Page
  * ------------
- * Route: "/signup" - standalone page (no Header/Sidebar).
- *
- * Validates username, email, and password on submit, shows inline errors.
- * On success, redirects to /login per assignment spec.
- *
- * NOTE: does NOT call a real API yet - wired up once backend + Redux
- * auth slice exist. For now, only client-side validation.
+ * Route: "/signup" - standalone page.
+ * Calls the real backend via registerUser thunk. On success, redirects
+ * to /login per assignment spec (no auto-login after registration).
  */
 
 function Signup() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const { status, error: apiError } = useSelector((state) => state.auth)
+
   const [formData, setFormData] = useState({ username: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
 
@@ -23,7 +24,7 @@ function Signup() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
 
     const newErrors = {
@@ -36,9 +37,10 @@ function Signup() {
     const hasErrors = Object.values(newErrors).some((msg) => msg !== '')
     if (hasErrors) return
 
-    // TODO (Backend step): replace with real POST /api/auth/register call.
-    console.log('Registering user:', formData)
-    navigate('/login')
+    const result = await dispatch(registerUser(formData))
+    if (registerUser.fulfilled.match(result)) {
+      navigate('/login')
+    }
   }
   return (
     <div className="min-h-screen flex items-center justify-center bg-yt-bg px-4">
@@ -48,6 +50,12 @@ function Signup() {
       >
         <h1 className="text-xl font-semibold mb-1">Create your account</h1>
         <p className="text-sm text-yt-text-secondary mb-6">to continue to YouTube Clone</p>
+
+        {apiError && (
+          <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+            {apiError}
+          </p>
+        )}
 
         <label className="block mb-4">
           <span className="text-sm font-medium">Username</span>
@@ -88,10 +96,13 @@ function Signup() {
           {errors.password && <span className="text-xs text-red-500 mt-1 block">{errors.password}</span>}
         </label>
 
-        <button type="submit" className="w-full bg-yt-black text-yt-white rounded-lg py-2 text-sm font-medium">
-          Sign up
+        <button
+          type="submit"
+          disabled={status === 'loading'}
+          className="w-full bg-yt-black text-yt-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
+        >
+          {status === 'loading' ? 'Signing up...' : 'Sign up'}
         </button>
-
         <p className="text-sm text-center mt-4">
           Already have an account?{' '}
           <Link to="/login" className="text-blue-600 font-medium">Sign in</Link>
