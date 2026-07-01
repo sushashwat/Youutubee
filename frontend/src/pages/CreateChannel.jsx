@@ -1,21 +1,20 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
-import { addChannel } from '../redux/slices/channelsSlice'
+import { useSelector} from 'react-redux'
+import api from '../api/axios'
 
 /**
  * Create Channel Page
  * ---------------------
- * Route: "/create-channel"
- * Per assignment spec: a channel can only be created after signing in.
+ * Route: "/create-channel" - only accessible when signed in. 
+ * Calls real backend to create the channel 
  */
 function CreateChannel() {
   const navigate = useNavigate()
-  const dispatch = useDispatch()
   const { user, isAuthenticated } = useSelector((state) => state.auth)
-
   const [channelName, setChannelName] = useState('')
   const [description, setDescription] = useState('')
+  const [error, setError] = useState('')
 
   if (!isAuthenticated) {
     return (
@@ -26,30 +25,31 @@ function CreateChannel() {
     )
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     if (!channelName.trim()) return
 
-    const newChannelId = `channel-${Date.now()}`
-
-    dispatch(
-      addChannel({
-        channelId: newChannelId,
+    try{
+      const {data} = await api.post('/channels', {
         channelName: channelName.trim(),
-        owner: user.userId,
         description: description.trim(),
-        channelBanner: `https://placehold.co/1200x200/ff0000/ffffff?text=${encodeURIComponent(channelName)}`,
-        subscribers: 0,     
-        videos: [],
       })
-    )
-
-    navigate(`/channel/${newChannelId}`)
+      navigate(`/channel/${data._id}`)
+    } catch(err) {
+      setError(err.response?.data?.message || 'Failed to create channel')
+    }
   }
 
   return (
     <div className="max-w-md mx-auto py-10">
       <h1 className="text-xl font-semibold mb-6">Create your channel</h1>
+
+      {error && (
+        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+          {error}
+        </p>
+      )}
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label className="block">
           <span className="text-sm font-medium">Channel name</span>
