@@ -1,23 +1,18 @@
 import {Link} from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import { formatViews, formatTimeAgo } from '../utils/formatters'
 
 /**
  * VideoCard Component
  * --------------------
- * Single video thumbnail card shown in the Video Grid (home page).
- * 
- * Props:
- *  - video (object): one video object from src/data/videos.js
- * 
- * Wrapped in a <link> so clicking the card navigates to that video's player page (route:/video/:videoId)
+ * Renders a single video thumbnail card. Data now comes from the real
+ * backend (MongoDB _id instead of mock videoId, channel is populated
+ * object instead of a separate lookup).
  */
-function VideoCard({ video }) {
-  const channels = useSelector((state) => state.channels.items)
-  const channel = channels.find((c) => c.channelId === video.channelId)
 
+
+function VideoCard({ video }) {
   return (
-     <Link to={`/video/${video.videoId}`} className="cursor-pointer group block">
+     <Link to={`/video/${video._id}`} className="cursor-pointer group block">
       {/* Thumbnail */}
       <div className="relative rounded-xl overflow-hidden aspect-video bg-yt-hover-bg">
         <img
@@ -32,11 +27,12 @@ function VideoCard({ video }) {
         <h3 className="text-sm font-medium text-yt-black line-clamp-2">
           {video.title}
         </h3>
+        {/* channel is a populated object from backend, not a separate lookup */}
         <p className="text-xs text-yt-text-secondary mt-1">
-          {channel?.channelName ?? 'Unknown channel'}
+          {video.channel?.channelName ?? 'Unknown channel'}
         </p>
         <p className="text-xs text-yt-text-secondary">
-          {formatViews(video.views)} • {formatTimeAgo(video.uploadDate)}
+          {formatViews(video.views)} • {formatTimeAgo(video.createdAt)}
         </p>
       </div>
     </Link>
