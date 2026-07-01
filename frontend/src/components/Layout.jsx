@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchMyChannel } from '../redux/slices/channelsSlice';
 import Header from './Header';
 import Sidebar from './Sidebar';
 
@@ -17,7 +19,18 @@ import Sidebar from './Sidebar';
 
 function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const dispatch = useDispatch()
+  const {isAuthenticated} = useSelector((state)=> state.auth)
 
+  // Fetch the logged-in user's channel whenever auth state changes
+  // (login, logout, or page refresh with stored token).
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchMyChannel())
+    }
+  }, [isAuthenticated, dispatch])
+
+  
   return (
     <div className="bg-yt-bg min-h-screen">
       <Header onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)} />
