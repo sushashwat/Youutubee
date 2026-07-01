@@ -29,11 +29,12 @@ function Header({ onToggleSidebar }) {
   const { user, isAuthenticated } = useSelector((state) => state.auth)
   const channels = useSelector((state) => state.channels.items)
   const searchTerm = useSelector((state) => state.search.term)
+  const myChannel = useSelector((state) => state.channels.myChannel)
 
   const  [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   // Check whether the logged-in user already owns a channel.
   // (Will be used later to decide where the Create button navigates.)
-  const ownChannel = isAuthenticated ? channels.find((c) => c.owner === user.userId) : null
+  const ownChannel = isAuthenticated ? channels.find((c) => c.owner === user?._id) : null
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-yt-white border-b border-yt-border z-50">
@@ -104,9 +105,9 @@ function Header({ onToggleSidebar }) {
 
             {isAuthenticated && (
               <Link
-                to={ownChannel ? `/channel/${ownChannel.channelId}` : '/create-channel'}
+                to={myChannel ? `/channel/${myChannel._id}` : '/create-channel'}
                 className="hidden sm:block p-2 rounded-full hover:bg-yt-hover-bg"
-                aria-label={ownChannel ? 'Your channel' : 'Create channel'}
+                aria-label={myChannel ? 'Your channel' : 'Create channel'}
               >
                 <Video size={22} />
               </Link>
