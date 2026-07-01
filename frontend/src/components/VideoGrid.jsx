@@ -1,23 +1,50 @@
-import { useSelector } from 'react-redux'
+import { useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { fetchVideos } from '../redux/slices/videosSlice'
 import VideoCard from './VideoCard'
 
 /**
  * VideoGrid Component
  * --------------------
- * Filters videos by BOTH the selected category AND the search term
- * (case-insensitive match against the title), then renders the grid.
+ * Fetches videos from the backend on mount and whenever the active
+ * category or search term changes. Renders a responsive grid of cards.
  */
+
 function VideoGrid({ activeCategory }) {
-  const videos = useSelector((state) => state.videos.items)
+  const dispatch = useDispatch()
+  const {items: videos, status} = useSelector((state)=> state.videos)
   const searchTerm = useSelector((state) => state.search.term)
 
-  const filteredVideos = videos.filter((video) => {
-    const matchesCategory = activeCategory === 'All' || video.category === activeCategory
-    const matchesSearch = video.title.toLowerCase().includes(searchTerm.trim().toLowerCase())
-    return matchesCategory && matchesSearch
-  })
+  // Refetch whenever category or search changes
 
-  if (filteredVideos.length === 0) {
+  useEffect(()=>{
+    dispatch(fetchVideos({category: activeCategory, search: searchTerm}))
+  },[dispatch, activeCategory, searchTerm])
+
+  if(status === 'loading'){
+     return (
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-4">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="aspect-video rounded-xl bg-yt-hover-bg" />
+            <div className="mt-3 h-4 bg-yt-hover-bg rounded w-3/4" />
+            <div className="mt-2 h-3 bg-yt-hover-bg rounded w-1/2" />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+
+  if (status === 'failed') {
+    return (
+      <p className="text-red-500 text-sm py-8 text-center">
+        Failed to load videos. Is the backend running?
+      </p>
+    )
+  }
+
+   if (videos.length === 0) {
     return (
       <p className="text-yt-text-secondary text-sm py-8 text-center">
         No videos found.
@@ -27,11 +54,10 @@ function VideoGrid({ activeCategory }) {
 
   return (
     <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {filteredVideos.map((video) => (
-        <VideoCard key={video.videoId} video={video} />
+      {videos.map((video) => (
+        <VideoCard key={video._id} video={video} />
       ))}
     </div>
   )
 }
-
 export default VideoGrid
