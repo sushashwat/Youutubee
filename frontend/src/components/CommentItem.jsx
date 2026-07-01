@@ -5,14 +5,16 @@ import { formatTimeAgo } from '../utils/formatters'
  * CommentItem Component
  * ------------------------
  * Renders a single comment. If `canModify` is true (comment belongs to
- * the current user), shows Edit/Delete actions. Edit toggles an inline textbox in place of the static text.
+ * the current logged-in user), shows Edit/Delete actions.
+ * Uses comment._id (MongoDB) instead of comment.commentId (old mock data).
  *
  * Props:
- *  - comment: { commentId, userId, text, timestamp }
- *  - username: display name of the comment's author
+ *  - comment: { _id, text, createdAt, user: { username } }
+ *  - username: display name of the comment author
  *  - canModify: whether to show edit/delete controls
- *  - onEdit(commentId, newText), onDelete(commentId): handlers from parent
+ *  - onEdit(_id, newText), onDelete(_id): handlers from CommentSection
  */
+
 function CommentItem({ comment, username, canModify, onEdit, onDelete }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(comment.text)
@@ -20,7 +22,7 @@ function CommentItem({ comment, username, canModify, onEdit, onDelete }) {
   function saveEdit() {
     const trimmed = editText.trim()
     if (!trimmed) return
-    onEdit(comment.commentId, trimmed)
+    onEdit(comment._id, trimmed)
     setIsEditing(false)
   }
 
@@ -69,7 +71,7 @@ function CommentItem({ comment, username, canModify, onEdit, onDelete }) {
               Edit
             </button>
             <button
-              onClick={() => onDelete(comment.commentId)}
+              onClick={() => onDelete(comment._id)}
               className="text-xs text-yt-text-secondary hover:text-yt-black"
             >
               Delete
