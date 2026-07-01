@@ -1,108 +1,128 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { Pencil, Trash2 } from 'lucide-react'
-import { deleteVideo, updateVideo, addVideo } from '../redux/slices/videosSlice'
+import { ImageOff, Pencil, Trash2 } from 'lucide-react'
+import { createVideo, updateVideo, deleteVideo } from '../redux/slices/videosSlice'
 import { categories } from '../data/categories'
 import { formatViews, formatTimeAgo } from '../utils/formatters'
+import api from '../api/axios'
 
 /**
  * Channel Page
  * -------------
  * Route: "/channel/:channelId"
- *
- * Shows channel banner/info + grid of its videos. If the logged-in user
- * owns this channel, shows Edit/Delete on each video and an upload form.
+ * Fetches channel data from real backend. Owner sees upload/edit/delete.
  */
+
 function ChannelPage() {
   const { channelId } = useParams()
   const dispatch = useDispatch()
 
-  const channels = useSelector((state) => state.channels.items)
-  const allVideos = useSelector((state) => state.videos.items)
-  const { user, isAuthenticated } = useSelector((state) => state.auth)
+  const {user, isAuthenticated} = useSelector((state)=> state.auth)
 
-  const channel = channels.find((c) => c.channelId === channelId)
-  const channelVideos = allVideos.filter((v) => v.channelId === channelId)
-
-  // Owner check - only the channel's creator sees edit/delete/upload controls.
-  const isOwner = isAuthenticated && channel?.owner === user?.userId
+  const[channel, setChannel] = useState(null)
+  const[channelVideos, setChannelVideos] = useState([])
+  const[loading, setLoading] = useState(true)
 
   const [editingVideoId, setEditingVideoId] = useState(null)
   const [editTitle, setEditTitle] = useState('')
-
   const [showUploadForm, setShowUploadForm] = useState(false)
   const [newVideo, setNewVideo] = useState({
-    title: '',
-    thumbnailUrl: '',
-    videoUrl: '',
-    description: '',
-    category: 'Education',
+    title: '', thumbnailUrl: '', videoUrl: '', description: '', category: 'Education',
   })
+
+  // Fetch channel + its videos from backend on mount
+  useEffect(() => {
+    async function fetchChannel() {
+      try {
+        setLoading(true)
+        const { data } = await api.get(`/channels/${channelId}`)
+        setChannel(data)
+        setChannelVideos(data.videos ?? [])
+      } catch (err) {
+        console.error('Failed to fetch channel:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchChannel()
+  }, [channelId])
+
+  // Owner check - MongoDB _id comparison
+  const isOwner = isAuthenticated && channel?.owner?.toString() === user?._id
+
+  if (loading) {
+    return <p className="text-yt-text-secondary">Loading channel...</p>
+  }
 
   if (!channel) {
     return <p className="text-yt-text-secondary">Channel not found.</p>
   }
 
   function startEdit(video) {
-    setEditingVideoId(video.videoId)
+    setEditingVideoId(video._id)
     setEditTitle(video.title)
   }
 
-  function saveEdit(videoId) {
+  async function saveEdit(videoId) {
     const trimmed = editTitle.trim()
     if (!trimmed) return
-    dispatch(updateVideo({ videoId, title: trimmed }))
+    const result = await dispatch(updateVideo({ videoId, title: trimmed }))
+    if (updateVideo.fulfilled.match(result)) {
+      setChannelVideos((prev) =>
+        prev.map((v) => (v._id === videoId ? { ...v, title: trimmed } : v))
+      )
+    }
     setEditingVideoId(null)
   }
 
-  function handleDelete(videoId) {
-    dispatch(deleteVideo(videoId))
+  async function handleDelete(videoId) {
+    const result = await dispatch(deleteVideo(videoId))
+    if (deleteVideo.fulfilled.match(result)) {
+      setChannelVideos((prev) => prev.filter((v) => v._id !== videoId))
+    }
   }
 
   function handleUploadChange(e) {
     setNewVideo((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  function handleUploadSubmit(e) {
+  async function handleUploadSubmit(e) {
     e.preventDefault()
     if (!newVideo.title.trim() || !newVideo.thumbnailUrl.trim()) return
 
-    dispatch(
-      addVideo({
-        videoId: `video-${Date.now()}`,
+    const result = await dispatch(
+      createVideo({
         title: newVideo.title.trim(),
         thumbnailUrl: newVideo.thumbnailUrl.trim(),
         videoUrl: newVideo.videoUrl.trim() || 'https://www.w3schools.com/html/mov_bbb.mp4',
         description: newVideo.description.trim(),
-        channelId: channel.channelId,
-        uploader: user.userId,
         category: newVideo.category,
-        views: 0,
-        likes: 0,
-        dislikes: 0,
-        uploadDate: new Date().toISOString().slice(0, 10),
-        comments: [],
+        channelId: channel._id,
       })
     )
 
-    setNewVideo({ title: '', thumbnailUrl: '', videoUrl: '', description: '', category: 'Education' })
-    setShowUploadForm(false)
+    if (createVideo.fulfilled.match(result)) {
+      setChannelVideos((prev) => [result.payload, ...prev])
+      setNewVideo({ title: '', thumbnailUrl: '', videoUrl: '', description: '', category: 'Education' })
+      setShowUploadForm(false)
+    }
   }
 
   return (
     <div>
+       {/* Channel banner */}
       <img
-        src={channel.channelBanner}
+        src={channel.channelBanner || `https://placehold.co/1200x200/ff0000/ffffff?text=${encodeURIComponent(channel.channelName)}`}
         alt={`${channel.channelName} banner`}
         className="w-full h-32 sm:h-44 object-cover rounded-xl bg-yt-hover-bg"
       />
-
+          {/* channel info */}
       <div className="flex items-center justify-between flex-wrap gap-3 mt-4">
         <div>
           <h1 className="text-xl font-semibold">{channel.channelName}</h1>
           <p className="text-sm text-yt-text-secondary">
-            {channel.subscribers.toLocaleString()} subscribers • {channelVideos.length} videos
+            {channel.subscribers?.toLocaleString()} subscribers • {channelVideos.length} videos
           </p>
           <p className="text-sm mt-1">{channel.description}</p>
         </div>
@@ -116,7 +136,7 @@ function ChannelPage() {
           </button>
         )}
       </div>
-
+           {/* Upload form - only visible to channel owner */}
       {isOwner && showUploadForm && (
         <form
           onSubmit={handleUploadSubmit}
@@ -156,23 +176,28 @@ function ChannelPage() {
         </form>
       )}
 
+            {/* Videos grid */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mt-6">
+         {channelVideos.length === 0 && (
+          <p className="text-yt-text-secondary text-sm">No videos uploaded yet.</p>
+        )}
+
         {channelVideos.map((video) => (
-          <div key={video.videoId}>
-            <Link to={`/video/${video.videoId}`} className="block">
+          <div key={video._id}>
+            <Link to={`/video/${video._id}`} className="block">
               <div className="aspect-video rounded-xl overflow-hidden bg-yt-hover-bg">
                 <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
               </div>
             </Link>
 
             <div className="mt-2">
-              {editingVideoId === video.videoId ? (
+              {editingVideoId === video._id ? (
                 <div className="flex gap-2">
                   <input
                     type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
                     className="flex-1 border-b border-yt-border outline-none text-sm pb-1" autoFocus
                   />
-                  <button onClick={() => saveEdit(video.videoId)} className="text-xs font-medium text-blue-600">
+                  <button onClick={() => saveEdit(video._id)} className="text-xs font-medium text-blue-600">
                     Save
                   </button>
                 </div>
@@ -184,7 +209,7 @@ function ChannelPage() {
               </p>
             </div>
 
-            {isOwner && editingVideoId !== video.videoId && (
+            {isOwner && editingVideoId !== video._id && (
               <div className="flex gap-3 mt-1">
                 <button
                   onClick={() => startEdit(video)}
@@ -193,7 +218,7 @@ function ChannelPage() {
                   <Pencil size={14} /> Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(video.videoId)}
+                  onClick={() => handleDelete(video._id)}
                   className="flex items-center gap-1 text-xs text-yt-text-secondary hover:text-yt-black"
                 >
                   <Trash2 size={14} /> Delete
@@ -202,10 +227,6 @@ function ChannelPage() {
             )}
           </div>
         ))}
-
-        {channelVideos.length === 0 && (
-          <p className="text-yt-text-secondary text-sm">No videos uploaded yet.</p>
-        )}
       </div>
     </div>
   )
