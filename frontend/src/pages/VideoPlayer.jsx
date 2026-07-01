@@ -1,69 +1,86 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import { ThumbsUp, ThumbsDown } from 'lucide-react'
+import api from '../api/axios'
 import { formatViews, formatTimeAgo } from '../utils/formatters'
 import CommentSection from '../components/CommentSection'
 
 /**
  * VideoPlayer Page
  * -----------------
- * Route: "/video/:videoId"
- * Shows: video player, title/description, channel name, like/dislike
- * buttons, and the full comment section.
- *
- * NOTE: likes/dislikes/comments are local state for now (mock data).
- * Backend step will replace these with real API calls.
+ * Route: "/video/:videoId" (videoId is MongoDB _id now)
+ * Fetches the video from backend on mount. Passes real comment data
+ * (from the populated video object) to CommentSection.
  */
+
 function VideoPlayer() {
   const { videoId } = useParams()
-  const videos = useSelector((state)=> state.videos.items)
-  const channels = useSelector((state)=> state.channels.items)
-  const video = videos.find((v)=> v.videoId === videoId)
 
-  // Tracks what *this* user clicked: 'like' | 'dislike' | null.
-  // Needed so clicking Like again "undoes" it, and switching from
-  // Like to Dislike correctly removes the previous reaction.
-  const [likes, setLikes] = useState(video?.likes ?? 0)
-  const [dislikes, setDislikes] = useState(video?.dislikes ?? 0)
-  const [userReaction, setUserReaction] = useState(null)
-
-  // Reset reaction state whenever the user navigates to a *different*
-  // video (otherwise the previous video's like count would carry over).
+  const[video,setVideo] = useState(null)
+  const[loading, setLoading] = useState(true)
+  const[likes, setLikes] = useState(0)
+  const[dislikes,setDislikes] = useState(0)
+  const[userReaction, setUserReaction]= useState(null) 
 
   useEffect(()=>{
-    setLikes(video?.likes ?? 0)
-    setDislikes(video?.dislikes ?? 0)
-    setUserReaction(null)
+    async function fetchVideo(){
+      try{
+        setLoading(true)
+        const{data} = await api.get(`/videos/${videoId}`)
+        setVideo(data)
+        setLikes(data.likes)
+        setDislikes(data.dislikes)
+        setUserReaction(null)
+      } catch (err) {
+        console.error('Failed to fetch video:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchVideo()
   }, [videoId])
+
+
+ async function handleLike() {
+    const action = userReaction === 'like' ? 'undo-like' : 'like'
+    try {
+      const { data } = await api.patch(`/videos/${videoId}/react`, { action })
+      setLikes(data.likes)
+      setDislikes(data.dislikes)
+      setUserReaction(userReaction === 'like' ? null : 'like')
+    } catch (err) {
+      console.error('React failed:', err)
+    }
+  }
+
+   async function handleDislike() {
+    const action = userReaction === 'dislike' ? 'undo-dislike' : 'dislike'
+    try {
+      const { data } = await api.patch(`/videos/${videoId}/react`, { action })
+      setLikes(data.likes)
+      setDislikes(data.dislikes)
+      setUserReaction(userReaction === 'dislike' ? null : 'dislike')
+    } catch (err) {
+      console.error('React failed:', err)
+    }
+  }
+
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl animate-pulse">
+        <div className="aspect-video rounded-xl bg-yt-hover-bg" />
+        <div className="mt-3 h-6 bg-yt-hover-bg rounded w-3/4" />
+        <div className="mt-2 h-4 bg-yt-hover-bg rounded w-1/4" />
+      </div>
+    )
+  }
+
 
   if (!video) {
     return <p className="text-yt-text-secondary">Video not found.</p>
   }
 
-  const channel = channels.find((c) => c.channelId === video.channelId)
-
-  function handleLike() {
-    if (userReaction === 'like') {
-      setLikes((prev) => prev - 1)
-      setUserReaction(null)
-    } else {
-      setLikes((prev) => prev + 1)
-      if (userReaction === 'dislike') setDislikes((prev) => prev - 1)
-      setUserReaction('like')
-    }
-  }
-
-  function handleDislike() {
-    if (userReaction === 'dislike') {
-      setDislikes((prev) => prev - 1)
-      setUserReaction(null)
-    } else {
-      setDislikes((prev) => prev + 1)
-      if (userReaction === 'like') setLikes((prev) => prev - 1)
-      setUserReaction('dislike')
-    }
-  }
 
   return (
     <div className="max-w-4xl">
@@ -80,9 +97,9 @@ function VideoPlayer() {
       {/* Channel name + like/dislike row */}
       <div className="flex items-center justify-between mt-2 flex-wrap gap-3">
         <div>
-          <p className="font-medium">{channel?.channelName ?? 'Unknown channel'}</p>
+          <p className="font-medium">{video.channel?.channelName ?? 'Unknown channel'}</p>
           <p className="text-xs text-yt-text-secondary">
-            {formatViews(video.views)} • {formatTimeAgo(video.uploadDate)}
+            {formatViews(video.views)} • {formatTimeAgo(video.createdAt)}
           </p>
         </div>
 
@@ -112,7 +129,9 @@ function VideoPlayer() {
       </p>
 
       {/* Comments - full CRUD handled inside CommentSection */}
-      <CommentSection initialComments={video.comments} />
+      <CommentSection
+      videoId = {video._id}
+      initialComments={video.comments ?? []} />
     </div>
   )
 }
