@@ -1,7 +1,8 @@
 import {
   Home, Clapperboard, Rss, History, ListVideo, Clock, ThumbsUp,
-  Flame, Music2, Gamepad2, Newspaper, Trophy, GraduationCap
-} from 'lucide-react'
+  Flame, Music2, Gamepad2, Newspaper, Trophy, GraduationCap} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+
 
 /**
  * Sidebar Component
@@ -16,16 +17,14 @@ import {
  *   2. "You" section: History, Playlists, Watch later, Liked videos
  *   3. Explore section: Trending, Music, Gaming, News, Sports, Learning
  *
- * NOTE: Links are not wired to React Router yet (done in the Routing step).
- * For now this only renders the static nav structure.
  */
 function Sidebar({ isOpen }) {
-  const primaryNav = [
-    { label: 'Home', icon: Home },
-    { label: 'Shorts', icon: Clapperboard },
-    { label: 'Subscriptions', icon: Rss },
-  ]
-
+  const navigate = useNavigate()
+ const primaryNav = [
+  { label: 'Home', icon: Home, path: '/' },
+  { label: 'Shorts', icon: Clapperboard, path: '/' },
+  { label: 'Subscriptions', icon: Rss, path: '/' },
+]
   const youSection = [
     { label: 'History', icon: History },
     { label: 'Playlists', icon: ListVideo },
@@ -43,9 +42,10 @@ function Sidebar({ isOpen }) {
   ]
 
   // Reusable row renderer - avoids repeating the same JSX for every list above
-  const renderItem = ({ label, icon: Icon }) => (
+  const renderItem = ({ label, icon: Icon,path }) => (
     <button
       key={label}
+      onClick={() => path && navigate(path)}
       className={`flex items-center w-full rounded-lg hover:bg-yt-hover-bg
                   ${isOpen ? 'gap-4 px-3 py-2.5' : 'flex-col gap-1 py-3'}`}
     >
