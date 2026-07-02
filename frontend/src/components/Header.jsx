@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { Menu, Search, Mic, Bell, Video, User, LogOut, ArrowLeft } from 'lucide-react'
 import { logout } from '../redux/slices/authSlice'
-import {setSearchTerm} from '../redux/slices/searchSlice'
+import { setSearchTerm } from '../redux/slices/searchSlice'
 
 /**
  * Header Component
@@ -26,12 +26,13 @@ import {setSearchTerm} from '../redux/slices/searchSlice'
  */
 function Header({ onToggleSidebar }) {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const { user, isAuthenticated } = useSelector((state) => state.auth)
   const channels = useSelector((state) => state.channels.items)
   const searchTerm = useSelector((state) => state.search.term)
   const myChannel = useSelector((state) => state.channels.myChannel)
 
-  const  [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   // Check whether the logged-in user already owns a channel.
   // (Will be used later to decide where the Create button navigates.)
   const ownChannel = isAuthenticated ? channels.find((c) => c.owner === user?._id) : null
@@ -69,9 +70,13 @@ function Header({ onToggleSidebar }) {
             >
               <Menu size={22} />
             </button>
-            <div className="flex items-center gap-1 cursor-pointer">
-              <span className="bg-yt-red text-yt-white rounded px-1 text-xs font-bold leading-5">▶</span>
-              <span className="text-xl font-bold tracking-tight">YouTube</span>
+            <div className="flex items-center gap-1 cursor-pointer" onClick={() => navigate('/')}>
+              <div className="bg-yt-red rounded px-1.5 py-0.5 flex items-center justify-center">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="white">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+              <span className="text-xl font-bold tracking-tight text-black">YouTube</span>
             </div>
           </div>
 
