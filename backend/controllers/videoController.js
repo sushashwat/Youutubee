@@ -17,7 +17,7 @@ export async function getVideos(req,res){
                 filter.category = category
             }
             if(search){
-                filter.title = {$regex: search, $option: 'i'} // case-insensitive partial match
+                filter.title = {$regex: search, $options: 'i'} // case-insensitive partial match
             }
             const videos = await Video.find(filter)
             .populate('channel', 'channelName channelBanner')
